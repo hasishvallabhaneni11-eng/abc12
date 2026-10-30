@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ML Accuracy vs Luck — Interactive Experiments</title>
+  <meta name="description" content="Run real ML experiments and see how random seeds, test-set splits, and blocking affect accuracy benchmarks." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+
+  <!-- ========== NAVIGATION ========== -->
+  <nav id="main-nav" class="scrolled">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">🎲 <span>ML vs Luck</span></a>
+      <div class="nav-links">
+        <a href="#" class="tab-link active" data-tab="home">Home</a>
+        <a href="#" class="tab-link" data-tab="exp1">Exp 1: Seeds</a>
+        <a href="#" class="tab-link" data-tab="exp2">Exp 2: Splits</a>
+        <a href="#" class="tab-link" data-tab="exp3">Exp 3: A/A</a>
+      </div>
+      <button id="nav-toggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========== HOME TAB ========== -->
+  <main>
+    <section id="tab-home" class="tab-panel active">
+      <div class="hero-compact">
+        <div class="hero-bg">
+          <canvas id="particle-canvas"></canvas>
+          <div class="gradient-orb orb-1"></div>
+          <div class="gradient-orb orb-2"></div>
+        </div>
+        <div class="hero-content">
+          <div class="hero-badge">Interactive ML Experiments</div>
+          <h1 class="hero-title">
+            <span class="line-1">One Run Crowns a Model.</span>
+            <span class="line-2">Does the Next Run <em>Agree?</em></span>
+          </h1>
+          <p class="hero-subtitle">
+            Run real scikit-learn experiments right from your browser. See how random seeds,
+            test-set splits, and blocking change measured accuracy on the Breast Cancer Wisconsin dataset.
+          </p>
+          <div class="hero-stats">
+            <div class="hero-stat">
+              <span class="hero-stat-value">569</span>
+              <span class="hero-stat-label">Observations</span>
+            </div>
+            <div class="hero-stat-divider"></div>
+            <div class="hero-stat">
+              <span class="hero-stat-value">30</span>
+              <span class="hero-stat-label">Features</span>
+            </div>
+            <div class="hero-stat-divider"></div>
+            <div class="hero-stat">
+              <span class="hero-stat-value">3</span>
+              <span class="hero-stat-label">Classifiers</span>
+            </div>
+          </div>
+          <div class="home-cards">
+            <button class="home-card" data-goto="exp1">
+              <div class="home-card-icon" style="--accent: var(--blue)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              </div>
+              <div>
+                <h3>Experiment 1</h3>
+                <p>Change the seed, keep the split fixed</p>
+              </div>
+              <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+            <button class="home-card" data-goto="exp2">
+              <div class="home-card-icon" style="--accent: var(--purple)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
+              </div>
+              <div>
+                <h3>Experiment 2</h3>
+                <p>Three models on the same shared splits</p>
+              </div>
+              <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+            <button class="home-card" data-goto="exp3">
+              <div class="home-card-icon" style="--accent: var(--cyan)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              </div>
+              <div>
+                <h3>Experiment 3</h3>
+                <p>Same random forest vs. itself (A/A test)</p>
+              </div>
+              <svg class="arrow-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== EXPERIMENT 1 ========== -->
+    <section id="tab-exp1" class="tab-panel">
+      <div class="container">
+        <div class="exp-header">
+          <span class="section-tag">Experiment 1</span>
+          <h2>Seed Variation on a Fixed Split</h2>
+          <p>Change only the model's random seed while keeping the train/test partition fixed.
+             Watch how accuracy scatters — even though the data doesn't change.</p>
+        </div>
+
+        <div class="controls-bar glass-card">
+          <div class="control-group">
+            <label>Number of seeds</label>
+            <input type="range" id="e1-seeds" min="10" max="200" value="50" step="10" />
+            <span class="range-val" id="e1-seeds-val">50</span>
+          </div>
+          <div class="control-group">
+            <label>Test set size</label>
+            <input type="number" id="e1-test" min="30" max="300" value="114" />
+          </div>
+          <div class="control-group">
+            <label>Split seed</label>
+            <input type="number" id="e1-split" min="0" max="99999" value="42" />
+          </div>
+          <div class="control-group">
+            <label>RF trees</label>
+            <input type="number" id="e1-trees" min="5" max="200" value="25" />
+          </div>
+          <button class="run-btn" id="btn-exp1" onclick="runExp1()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+            Run Experiment
+          </button>
+        </div>
+
+        <div id="exp1-loading" class="loading-state hidden">
+          <div class="spinner"></div>
+          <p>Running 50 seeds × 2 models...</p>
+        </div>
+
+        <div id="exp1-results" class="results-area">
+          <div class="results-grid-2">
+            <div class="chart-container glass-card">
+              <div class="chart-header"><h3>Accuracy per Seed</h3></div>
+              <div class="chart-wrapper"><canvas id="chart-seeds"></canvas></div>
+            </div>
+            <div class="stats-panel">
+              <div class="stat-card glass-card" id="e1-rf-stats" style="--border-accent: var(--blue)"></div>
+              <div class="stat-card glass-card" id="e1-dt-stats" style="--border-accent: var(--orange)"></div>
+              <div class="insight-callout glass-card" id="e1-insight"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== EXPERIMENT 2 ========== -->
+    <section id="tab-exp2" class="tab-panel">
+      <div class="container">
+        <div class="exp-header">
+          <span class="section-tag">Experiment 2</span>
+          <h2>Three Models on Shared Splits</h2>
+          <p>All classifiers see the same train/test partitions (blocking).
+             This is the fair way to compare — removing split-to-split noise.</p>
+        </div>
+
+        <div class="controls-bar glass-card">
+          <div class="control-group">
+            <label>Number of splits</label>
+            <input type="range" id="e2-splits" min="10" max="100" value="30" step="5" />
+            <span class="range-val" id="e2-splits-val">30</span>
+          </div>
+          <div class="control-group">
+            <label>RF trees</label>
+            <input type="number" id="e2-trees" min="5" max="200" value="25" />
+          </div>
+          <button class="run-btn" id="btn-exp2" onclick="runExp2()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+            Run Experiment
+          </button>
+        </div>
+
+        <div id="exp2-loading" class="loading-state hidden">
+          <div class="spinner"></div>
+          <p>Running 3 models × 30 splits...</p>
+        </div>
+
+        <div id="exp2-results" class="results-area">
+          <div class="chart-container glass-card">
+            <div class="chart-header"><h3>Accuracy Across Shared Splits</h3></div>
+            <div class="chart-wrapper"><canvas id="chart-splits"></canvas></div>
+          </div>
+          <div class="results-grid-2" style="margin-top:1.5rem">
+            <div class="chart-container glass-card chart-small">
+              <div class="chart-header"><h3>Split-Level Wins</h3></div>
+              <div class="chart-wrapper donut-wrapper"><canvas id="chart-wins"></canvas></div>
+            </div>
+            <div class="glass-card" id="e2-table-wrapper"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== EXPERIMENT 3 ========== -->
+    <section id="tab-exp3" class="tab-panel">
+      <div class="container">
+        <div class="exp-header">
+          <span class="section-tag">Experiment 3</span>
+          <h2>Same Model vs. Itself (A/A Test)</h2>
+          <p>If the same random forest shows a gap against <em>itself</em>,
+             a one-run "win" over another model can't be trusted.</p>
+        </div>
+
+        <div class="controls-bar glass-card">
+          <div class="control-group">
+            <label>Number of pairs</label>
+            <input type="range" id="e3-pairs" min="50" max="1000" value="200" step="50" />
+            <span class="range-val" id="e3-pairs-val">200</span>
+          </div>
+          <div class="control-group">
+            <label>RNG seed</label>
+            <input type="number" id="e3-rng" min="0" max="99999" value="2026" />
+          </div>
+          <div class="control-group">
+            <label>Test size</label>
+            <input type="number" id="e3-test" min="30" max="300" value="114" />
+          </div>
+          <div class="control-group">
+            <label>RF trees</label>
+            <input type="number" id="e3-trees" min="5" max="200" value="25" />
+          </div>
+          <button class="run-btn" id="btn-exp3" onclick="runExp3()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+            Run Experiment
+          </button>
+        </div>
+
+        <div class="warning-banner glass-card">
+          <span>⏱️</span>
+          <p><strong>Heads up:</strong> 1000 pairs ≈ 3–4 minutes. Start with 200 for a quick preview.</p>
+        </div>
+
+        <div id="exp3-loading" class="loading-state hidden">
+          <div class="spinner"></div>
+          <p id="exp3-loading-text">Running 200 A/A pairs...</p>
+        </div>
+
+        <div id="exp3-results" class="results-area">
+          <div class="condition-row" id="e3-conditions"></div>
+          <div class="chart-container glass-card" style="margin-top:1.5rem">
+            <div class="chart-header"><h3>Gap Distribution</h3></div>
+            <div class="chart-wrapper"><canvas id="chart-gaps"></canvas></div>
+          </div>
+          <div class="insight-callout glass-card" style="max-width:760px; margin:1.5rem auto 0;">
+            <div class="insight-icon">⚠️</div>
+            <p>These are <strong>gap frequencies</strong>, not a Type I error rate.
+               No decision rule for declaring a "winner" was tested.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Diagnostic: show error if Chart.js failed to load -->
+  <script>
+    if (typeof Chart === 'undefined') {
+      document.body.innerHTML = '<div style="color:red;padding:2rem;font-size:1.5rem">ERROR: Chart.js failed to load. Check your internet connection or disable ad-blocker.</div>' + document.body.innerHTML;
+    }
+  </script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

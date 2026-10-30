@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ML Accuracy vs Luck — Does One Run Tell the Truth?</title>
+  <meta name="description" content="An interactive exploration of how random seeds, test-set splits, and blocking affect machine-learning accuracy benchmarks. Based on a probability & statistics research study." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ========== NAVIGATION ========== -->
+  <nav id="main-nav">
+    <div class="nav-inner">
+      <a href="#hero" class="nav-logo">🎲 <span>ML vs Luck</span></a>
+      <div class="nav-links">
+        <a href="#overview">Overview</a>
+        <a href="#exp1">Seeds</a>
+        <a href="#exp2">Splits</a>
+        <a href="#exp3">A/A Gaps</a>
+        <a href="#blocking">Blocking</a>
+        <a href="#conclusion">Takeaways</a>
+      </div>
+      <button id="nav-toggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ========== HERO ========== -->
+  <section id="hero">
+    <div class="hero-bg">
+      <canvas id="particle-canvas"></canvas>
+      <div class="gradient-orb orb-1"></div>
+      <div class="gradient-orb orb-2"></div>
+      <div class="gradient-orb orb-3"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge reveal">Probability &amp; Statistics Research</div>
+      <h1 class="hero-title reveal">
+        <span class="line-1">One Run Crowns a Model.</span>
+        <span class="line-2">Does the Next Run <em>Agree?</em></span>
+      </h1>
+      <p class="hero-subtitle reveal">
+        An interactive exploration of how random seeds, test-set size, and blocked comparisons
+        shape measured accuracy — so a single leaderboard number never fools you again.
+      </p>
+      <div class="hero-stats reveal">
+        <div class="hero-stat">
+          <span class="hero-stat-value" data-target="569">0</span>
+          <span class="hero-stat-label">Observations</span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-value" data-target="30">0</span>
+          <span class="hero-stat-label">Features</span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-value" data-target="3">0</span>
+          <span class="hero-stat-label">Classifiers</span>
+        </div>
+        <div class="hero-stat-divider"></div>
+        <div class="hero-stat">
+          <span class="hero-stat-value" data-target="1000">0</span>
+          <span class="hero-stat-label">A/A Pairs</span>
+        </div>
+      </div>
+      <a href="#overview" class="hero-cta reveal">
+        Explore the Experiments
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 13l5 5 5-5M7 6l5 5 5-5"/></svg>
+      </a>
+    </div>
+    <div class="scroll-indicator">
+      <div class="mouse"><div class="wheel"></div></div>
+    </div>
+  </section>
+
+  <!-- ========== OVERVIEW ========== -->
+  <section id="overview">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">The Problem</span>
+        <h2>Why One Number Lies</h2>
+        <p class="section-desc">
+          A leaderboard compresses a complicated experiment into one number. That number depends on
+          <strong>which data entered the test set</strong>, <strong>which stayed in training</strong>,
+          and <strong>how the model was initialized</strong>. Here's what we found.
+        </p>
+      </div>
+
+      <div class="overview-grid">
+        <div class="overview-card reveal" data-delay="0">
+          <div class="overview-card-icon" style="--accent: var(--blue)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <h3>Seed Variation</h3>
+          <p>Same data, different random seed. The random forest's accuracy swung by <strong>3.5 percentage points</strong> across 50 seeds.</p>
+          <span class="overview-card-tag">Experiment 1</span>
+        </div>
+        <div class="overview-card reveal" data-delay="100">
+          <div class="overview-card-icon" style="--accent: var(--purple)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
+          </div>
+          <h3>Shared Splits</h3>
+          <p>Three models, same 30 partitions. Logistic regression led on <strong>28 of 30 splits</strong> — the clear winner <em>here</em>.</p>
+          <span class="overview-card-tag">Experiment 2</span>
+        </div>
+        <div class="overview-card reveal" data-delay="200">
+          <div class="overview-card-icon" style="--accent: var(--cyan)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <h3>A/A Testing</h3>
+          <p>Same algorithm vs itself. A ≥1-point gap appeared in <strong>61.9%</strong> of pairs when both seed and split changed.</p>
+          <span class="overview-card-tag">Experiment 3</span>
+        </div>
+        <div class="overview-card reveal" data-delay="300">
+          <div class="overview-card-icon" style="--accent: var(--green)">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          </div>
+          <h3>Blocking Effect</h3>
+          <p>Matching comparisons on shared splits gave a relative efficiency of <strong>118.6%</strong>, cutting residual noise.</p>
+          <span class="overview-card-tag">Design Insight</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== EXPERIMENT 1: SEED VARIATION ========== -->
+  <section id="exp1">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Experiment 1</span>
+        <h2>Change the Seed, Keep the Split Fixed</h2>
+        <p class="section-desc">
+          50 different estimator seeds, one 455/114 train/test partition.
+          The chart shows how accuracy scatters when <em>only</em> the random seed changes.
+        </p>
+      </div>
+
+      <div class="exp1-layout">
+        <div class="chart-container glass-card reveal">
+          <div class="chart-header">
+            <h3>Accuracy per Seed</h3>
+            <div class="chart-legend">
+              <span class="legend-dot" style="--dot-color: var(--blue)"></span> Random Forest
+              <span class="legend-dot" style="--dot-color: var(--orange)"></span> Decision Tree
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="chart-seeds"></canvas>
+          </div>
+        </div>
+
+        <div class="exp1-stats reveal">
+          <div class="stat-card glass-card" style="--border-accent: var(--blue)">
+            <div class="stat-card-header">
+              <span class="stat-model-dot" style="background: var(--blue)"></span>
+              Random Forest
+            </div>
+            <div class="stat-card-value">93.91<span class="stat-unit">%</span></div>
+            <div class="stat-card-meta">
+              <div class="stat-row"><span>SD</span><strong>0.86 pp</strong></div>
+              <div class="stat-row"><span>Range</span><strong>92.11 – 95.61%</strong></div>
+              <div class="stat-row"><span>95% CI</span><strong>[93.67, 94.16]</strong></div>
+              <div class="stat-row"><span>Distinct values</span><strong>5</strong></div>
+            </div>
+          </div>
+          <div class="stat-card glass-card" style="--border-accent: var(--orange)">
+            <div class="stat-card-header">
+              <span class="stat-model-dot" style="background: var(--orange)"></span>
+              Decision Tree
+            </div>
+            <div class="stat-card-value">92.26<span class="stat-unit">%</span></div>
+            <div class="stat-card-meta">
+              <div class="stat-row"><span>SD</span><strong>1.17 pp</strong></div>
+              <div class="stat-row"><span>Range</span><strong>89.47 – 94.74%</strong></div>
+              <div class="stat-row"><span>95% CI</span><strong>[91.93, 92.60]</strong></div>
+              <div class="stat-row"><span>Distinct values</span><strong>7</strong></div>
+            </div>
+          </div>
+          <div class="insight-callout glass-card">
+            <div class="insight-icon">💡</div>
+            <p>With 114 test cases, <strong>one extra correct prediction = 0.877 pp</strong>. Score movement is discrete — not continuous.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== EXPERIMENT 2: SHARED SPLITS ========== -->
+  <section id="exp2">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Experiment 2</span>
+        <h2>Three Models, Same Thirty Splits</h2>
+        <p class="section-desc">
+          All classifiers see the same train/test partitions (blocking).
+          This is the fair way to compare — removing split-to-split noise from the model comparison.
+        </p>
+      </div>
+
+      <div class="exp2-layout">
+        <div class="chart-container glass-card reveal">
+          <div class="chart-header">
+            <h3>Accuracy Across 30 Shared Splits</h3>
+            <div class="chart-legend">
+              <span class="legend-dot" style="--dot-color: var(--emerald)"></span> Logistic Regression
+              <span class="legend-dot" style="--dot-color: var(--blue)"></span> Random Forest
+              <span class="legend-dot" style="--dot-color: var(--orange)"></span> Decision Tree
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="chart-splits"></canvas>
+          </div>
+        </div>
+
+        <div class="exp2-bottom">
+          <div class="chart-container glass-card reveal chart-small">
+            <div class="chart-header">
+              <h3>Split-Level Wins</h3>
+            </div>
+            <div class="chart-wrapper donut-wrapper">
+              <canvas id="chart-wins"></canvas>
+            </div>
+          </div>
+
+          <div class="exp2-table-wrapper glass-card reveal">
+            <h3>Summary Statistics</h3>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Mean</th>
+                  <th>SD</th>
+                  <th>Binomial SD</th>
+                  <th>Wins</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="table-dot" style="background:var(--emerald)"></span>Logistic Reg.</td>
+                  <td><strong>98.25%</strong></td>
+                  <td>1.15 pp</td>
+                  <td>1.23 pp</td>
+                  <td><span class="win-badge win-high">28/30</span></td>
+                </tr>
+                <tr>
+                  <td><span class="table-dot" style="background:var(--blue)"></span>Random Forest</td>
+                  <td>95.76%</td>
+                  <td>1.94 pp</td>
+                  <td>1.89 pp</td>
+                  <td><span class="win-badge win-low">3/30</span></td>
+                </tr>
+                <tr>
+                  <td><span class="table-dot" style="background:var(--orange)"></span>Decision Tree</td>
+                  <td>92.40%</td>
+                  <td>2.23 pp</td>
+                  <td>2.48 pp</td>
+                  <td><span class="win-badge win-low">1/30</span></td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="table-footnote">Ties count for every tied model, so counts can exceed 30.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== EXPERIMENT 3: A/A GAPS ========== -->
+  <section id="exp3">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Experiment 3</span>
+        <h2>Same Model vs. Itself</h2>
+        <p class="section-desc">
+          If the same random forest shows a gap against <em>itself</em>, a one-run "win"
+          over another model can't be trusted. 1,000 A/A pairs tell the story.
+        </p>
+      </div>
+
+      <div class="exp3-layout">
+        <div class="exp3-conditions reveal">
+          <div class="condition-card glass-card" style="--border-accent: var(--cyan)">
+            <div class="condition-label">D1 — Same Split</div>
+            <div class="condition-desc">Fixed partition, different estimator seeds only</div>
+            <div class="condition-stats">
+              <div class="cond-stat">
+                <span class="cond-stat-value counter" data-target="21.7" data-suffix="%">0</span>
+                <span class="cond-stat-label">Gap ≥ 1 pp</span>
+              </div>
+              <div class="cond-stat">
+                <span class="cond-stat-value counter" data-target="3.3" data-suffix="%">0</span>
+                <span class="cond-stat-label">Gap ≥ 2 pp</span>
+              </div>
+            </div>
+          </div>
+          <div class="vs-divider">
+            <span>vs</span>
+          </div>
+          <div class="condition-card glass-card" style="--border-accent: var(--rose)">
+            <div class="condition-label">D2 — Different Splits</div>
+            <div class="condition-desc">Both partition and estimator seed change</div>
+            <div class="condition-stats">
+              <div class="cond-stat">
+                <span class="cond-stat-value counter" data-target="61.9" data-suffix="%">0</span>
+                <span class="cond-stat-label">Gap ≥ 1 pp</span>
+              </div>
+              <div class="cond-stat">
+                <span class="cond-stat-value counter" data-target="39.1" data-suffix="%">0</span>
+                <span class="cond-stat-label">Gap ≥ 2 pp</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-container glass-card reveal">
+          <div class="chart-header">
+            <h3>Gap Distribution (1,000 pairs each)</h3>
+            <div class="chart-legend">
+              <span class="legend-dot" style="--dot-color: var(--cyan)"></span> D1 Same Split
+              <span class="legend-dot" style="--dot-color: var(--rose)"></span> D2 Different Splits
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="chart-gaps"></canvas>
+          </div>
+        </div>
+
+        <div class="insight-callout glass-card reveal" style="max-width:760px; margin: 2rem auto 0;">
+          <div class="insight-icon">⚠️</div>
+          <p>These are <strong>gap frequencies</strong>, not a Type I error rate.
+             No decision rule for declaring a "winner" was tested — the numbers show how often
+             pure luck creates a visible spread between identical procedures.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== BLOCKING ========== -->
+  <section id="blocking">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Design Insight</span>
+        <h2>Why Blocking Matters</h2>
+        <p class="section-desc">
+          Comparing models on shared splits is like a paired t-test — it removes
+          split-to-split noise, leaving a cleaner signal for the model difference.
+        </p>
+      </div>
+
+      <div class="blocking-layout">
+        <div class="blocking-visual glass-card reveal">
+          <div class="re-meter">
+            <div class="re-meter-track">
+              <div class="re-meter-fill" data-target="118.6">
+                <span class="re-meter-value">118.6%</span>
+              </div>
+            </div>
+            <div class="re-meter-labels">
+              <span>100%</span>
+              <span>Relative Efficiency</span>
+              <span>150%</span>
+            </div>
+          </div>
+          <p class="re-explanation">
+            The completely randomized residual mean square was <strong>1.186×</strong> the blocked residual.
+            Shared splits cut noise — this is a sample-specific estimate on one dataset.
+          </p>
+        </div>
+
+        <div class="blocking-model glass-card reveal">
+          <h3>Randomized Block Model</h3>
+          <div class="formula">
+            Y<sub>ij</sub> = μ + τ<sub>i</sub> + β<sub>j</sub> + ε<sub>ij</sub>
+          </div>
+          <div class="formula-legend">
+            <span><em>i</em> = model index</span>
+            <span><em>j</em> = split (block)</span>
+            <span>τ = model effect</span>
+            <span>β = block effect</span>
+          </div>
+          <p class="formula-note">
+            One score per model-split cell means model-by-split interaction
+            cannot be estimated separately from error.
+          </p>
+        </div>
+
+        <div class="blocking-ci glass-card reveal">
+          <h3>Running CI Half-Width</h3>
+          <div class="chart-wrapper chart-wrapper-small">
+            <canvas id="chart-ci"></canvas>
+          </div>
+          <p class="ci-note">
+            The random forest running 95% CI half-width dropped below 0.5 pp at seed 14
+            and reached <strong>0.244 pp</strong> at seed 50. Conditional on this one split.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CONCLUSION ========== -->
+  <section id="conclusion">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Key Takeaways</span>
+        <h2>What This Means for You</h2>
+      </div>
+
+      <div class="takeaway-grid">
+        <div class="takeaway-card reveal" data-delay="0">
+          <div class="takeaway-number">01</div>
+          <h3>Never Trust a Single Run</h3>
+          <p>Accuracy depends on which data entered the test set and how the model was initialized.
+             A one-run "win" can vanish on the next run.</p>
+        </div>
+        <div class="takeaway-card reveal" data-delay="100">
+          <div class="takeaway-number">02</div>
+          <h3>Report the Variation</h3>
+          <p>Showing mean, SD, and range across seeds/splits turns a point estimate
+             into honest uncertainty communication.</p>
+        </div>
+        <div class="takeaway-card reveal" data-delay="200">
+          <div class="takeaway-number">03</div>
+          <h3>Use Matched Comparisons</h3>
+          <p>Evaluating all models on the same splits (blocking) removes partition noise
+             and makes differences interpretable as paired effects.</p>
+        </div>
+        <div class="takeaway-card reveal" data-delay="300">
+          <div class="takeaway-number">04</div>
+          <h3>Mind the Granularity</h3>
+          <p>With 114 test cases, each prediction changes accuracy by 0.877 pp.
+             A 1-point difference might be one lucky guess.</p>
+        </div>
+        <div class="takeaway-card reveal" data-delay="400">
+          <div class="takeaway-number">05</div>
+          <h3>A/A Tests Reveal Luck</h3>
+          <p>When the same model shows a gap against itself, the gap isn't signal —
+             it's the noise floor of the evaluation process.</p>
+        </div>
+        <div class="takeaway-card reveal" data-delay="500">
+          <div class="takeaway-number">06</div>
+          <h3>Scope Your Claims</h3>
+          <p>One dataset, one set of hyperparameters, accuracy as the sole metric.
+             Honest science labels what it can and cannot support.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== METHODOLOGY ========== -->
+  <section id="methodology">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="section-tag">Methodology</span>
+        <h2>How the Experiment Was Built</h2>
+      </div>
+      <div class="method-grid">
+        <div class="method-card glass-card reveal">
+          <h3>📊 Dataset</h3>
+          <p><strong>Breast Cancer Wisconsin Diagnostic</strong> — 569 cases, 30 real-valued features,
+             binary diagnosis target. Selected for computational simplicity; not a clinical validation sample.</p>
+          <div class="method-cite">Wolberg et al. (1993), UCI Repository</div>
+        </div>
+        <div class="method-card glass-card reveal">
+          <h3>🤖 Models</h3>
+          <ul>
+            <li>Logistic regression (standardized, max_iter=2000)</li>
+            <li>Decision tree (random_state varies)</li>
+            <li>Random forest (25 trees, random_state varies)</li>
+          </ul>
+          <div class="method-cite">Fixed hyperparameters, no post-result tuning</div>
+        </div>
+        <div class="method-card glass-card reveal">
+          <h3>🔬 Design</h3>
+          <ul>
+            <li>50 estimator seeds on a 455/114 partition</li>
+            <li>30 common stratified 80/20 splits</li>
+            <li>1,000 A/A pairs in two conditions (D1/D2)</li>
+          </ul>
+          <div class="method-cite">All splits stratified; accuracy = correct / total</div>
+        </div>
+        <div class="method-card glass-card reveal">
+          <h3>📚 References</h3>
+          <p>12 peer-reviewed papers inform 10 explicit research gaps.
+             Key references: Dietterich (1998), Demšar (2006), Bouthillier et al. (2021),
+             Bosma et al. (2024).</p>
+          <div class="method-cite">APA-style author-date citations</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== FOOTER ========== -->
+  <footer id="footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="footer-logo">🎲</span>
+          <span>ML Accuracy vs Luck</span>
+        </div>
+        <p class="footer-text">
+          Probability &amp; Statistics · Undergraduate Research Paper · Teaching demo only, not clinical validation.
+        </p>
+        <p class="footer-copy">
+          Built with care for honest science communication.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
